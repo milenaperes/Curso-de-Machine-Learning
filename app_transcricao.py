@@ -1,71 +1,89 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import whisper
+from tqdm import tqdm
 import threading
-import os
 
 
+# Função para selecionar arquivos e iniciar a transcrição
 def selecionar_arquivos():
     filenames = filedialog.askopenfilenames(filetypes=[("Arquivos de vídeo", "*.mp4")])
     if filenames:
         iniciar_transcricao(filenames)
 
 
+# Função que realiza a transcrição e mostra a barra de progresso
 def iniciar_transcricao(filenames):
     try:
-        # Carregar o modelo de forma assíncrona para não travar a interface
-        threading.Thread(target=processar_arquivos, args=(filenames,)).start()
+        modelo_selecionado = combo_modelo.get()
+        prompt_usuario = entry_prompt.get("1.0", "end-1c")
+
+        threading.Thread(target=processar_arquivos, args=(filenames, modelo_selecionado, prompt_usuario)).start()
     except Exception as e:
         messagebox.showerror("Erro", f"Ocorreu um erro: {str(e)}")
 
 
-def processar_arquivos(filenames):
-    model = whisper.load_model("base")
+# Função que processa a transcrição com tqdm e salva o resultado em um arquivo
+def processar_arquivos(filenames, modelo_selecionado, prompt_usuario):
+    # Carrega o modelo selecionado pelo usuário
+    model = whisper.load_model(modelo_selecionado)
 
-    # Configurar a barra de progresso
-    progress_bar["maximum"] = len(filenames)
-    progress_bar["value"] = 0
-    text_resultado = ""
-
-    for i, fn in enumerate(filenames):
-        progress_bar["value"] = i + 1
-        app.update_idletasks()  # Atualiza a interface para refletir a barra de progresso
-
+    for fn in tqdm(filenames, desc="Transcrevendo arquivos"):
         audio = whisper.load_audio(fn)
-        result = model.transcribe(audio)
 
-        # Mostrar o resultado em uma janela pop-up
-        text_resultado += f"Arquivo: {os.path.basename(fn)}\n"
-        text_resultado += result["text"] + "\n\n"
-        messagebox.showinfo("Resultado da Transcrição", f"Arquivo {os.path.basename(fn)} transcrito com sucesso!")
+        # Transcrevendo com o prompt personalizado e idioma definido
+        result = model.transcribe(
+            audio,
+            temperature=0.1,
+            initial_prompt=prompt_usuario,
+            language="pt"  # Especifica que o áudio está em Português
+        )
+        texto_transcrito = result["text"]
 
+        # Salva o arquivo transcrito em um local escolhido pelo usuário
+        caminho_arquivo = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[("Arquivo de Texto", "*.txt")],
+            title="Salvar Transcrição"
+        )
 
-    exportar_para_txt(text_resultado)
+        if caminho_arquivo:
+            with open(caminho_arquivo, "w", encoding="utf-8") as f:
+                f.write(texto_transcrito)
+            messagebox.showinfo("Sucesso", f"Arquivo salvo em: {caminho_arquivo}")
+        else:
+            messagebox.showwarning("Cancelado", "Salvamento cancelado pelo usuário.")
 
-def exportar_para_txt(texto):
-    try:
-        output_path = filedialog.asksaveasfilename(defaultextension=".txt",
-                                                   filetypes=[("Arquivo de texto", "*.txt")],
-                                                   title="Salvar transcrição como")
-        if output_path:
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(texto)
-            messagebox.showinfo("Exportação", f"Transcrição exportada com sucesso para {output_path}")
-    except Exception as e:
-        messagebox.showerror("Erro", f"Erro ao exportar a transcrição: {str(e)}")
 
 # Configuração da interface principal
 app = tk.Tk()
 app.title("Transcritor de Áudio com Whisper")
-app.geometry("400x250")
+app.geometry("600x400")
+
+# Label para o campo de seleção de modelo
+label_modelo = tk.Label(app, text="Selecione o modelo de transcrição:")
+label_modelo.pack(pady=5)
+
+# ComboBox para seleção do modelo
+combo_modelo = ttk.Combobox(app, values=["medium", "large"], state="readonly")
+combo_modelo.set("medium")  # Define o valor padrão como "medium"
+combo_modelo.pack(pady=5)
+
+# Mensagem explicativa sobre os modelos
+label_info_modelo = tk.Label(app, text="Dica: O modelo 'large' é mais preciso, mas consome mais recursos.")
+label_info_modelo.pack(pady=5)
+
+# Label e campo de entrada para o prompt personalizado
+label_prompt = tk.Label(app, text="Insira o prompt personalizado:")
+label_prompt.pack(pady=5)
+
+entry_prompt = tk.Text(app, height=5, width=50)
+entry_prompt.insert("1.0", "Você é um transcritor especializado em capturar conteúdos de áudio com máxima precisão.")
+entry_prompt.pack(pady=5)
 
 # Botão para iniciar a seleção de arquivos
 btn_selecionar = tk.Button(app, text="Selecionar Arquivos", command=selecionar_arquivos)
 btn_selecionar.pack(pady=20)
-
-# Barra de progresso
-progress_bar = ttk.Progressbar(app, orient="horizontal", length=300, mode="determinate")
-progress_bar.pack(pady=10)
 
 # Roda a aplicação
 app.mainloop()
