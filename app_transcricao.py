@@ -3,6 +3,7 @@ from tkinter import filedialog, messagebox, ttk
 import whisper
 from tqdm import tqdm
 import threading
+import torch
 
 
 # Função para selecionar arquivos e iniciar a transcrição
@@ -25,8 +26,11 @@ def iniciar_transcricao(filenames):
 
 # Função que processa a transcrição com tqdm e salva o resultado em um arquivo
 def processar_arquivos(filenames, modelo_selecionado, prompt_usuario):
-    # Carrega o modelo selecionado pelo usuário
-    model = whisper.load_model(modelo_selecionado)
+    # Define o dispositivo e dtype baseado na disponibilidade de CUDA
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+
+    # Load the Whisper model with specified device and dtype
+    model = whisper.load_model(modelo_selecionado, device=device)
 
     for fn in tqdm(filenames, desc="Transcrevendo arquivos"):
         audio = whisper.load_audio(fn)
