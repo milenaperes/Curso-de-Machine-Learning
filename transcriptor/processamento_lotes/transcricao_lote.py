@@ -1,9 +1,7 @@
 from transcriptor.app.app_transcricao import AudioTranscriptorApp
 from transcriptor.processamento_lotes.error_logs import record_error
-import ffmpeg
 import logging
 import time
-from tqdm import tqdm
 import os
 import whisper
 

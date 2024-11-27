@@ -8,6 +8,8 @@ class args_parser:
     parser.add_argument('--path_processed', default=None, type=str)
     parser.add_argument('--prompt', default='Você é um transcritor especializado em capturar conteúdos de áudio com máxima precisão.', type=str)
     parser.add_argument('--model_size', default='medium', type=str)
+    parser.add_argument('--ffmpeg_path',default="E:/PycharmProjects/transcriptor/transcriptor/ffmpeg/bin/ffmpeg.exe",type=str)
+    parser.add_argument('--url',default=None,type=str)
     self.opts = parser.parse_args()
 
   def get_params(self):

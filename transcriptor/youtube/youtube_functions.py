@@ -1,5 +1,6 @@
 from yt_dlp import YoutubeDL
 from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound, TranscriptsDisabled
+from tqdm import tqdm
 from docx import Document
 import re
 import os
@@ -45,12 +46,7 @@ class YouTubeTranscriptDownloader:
 
     def detect_original_language(self, video_url):
         """Detect the video's original language."""
-        ydl_opts = {
-            'quiet': True,
-            'skip_download': True,
-        }
-
-        with YoutubeDL(ydl_opts) as ydl:
+        with YoutubeDL(self.ydl_opts) as ydl:
             video_info = ydl.extract_info(video_url, download=False)
             self.fallback_language = video_info.get('original_language', 'en')
             print(f"Detected original language: {self.fallback_language}")
@@ -104,39 +100,27 @@ class YouTubeTranscriptDownloader:
         except Exception as e:
             print(f"Failed to fetch captions for {video_title}: {e}")
 
-    def fetch_playlist_transcripts(self, playlist_url):
-        """Fetch and save transcripts for all videos in a playlist."""
-        playlist_opts = {
-            'quiet': True,
-            'extract_flat': True,
-            'skip_download': True,
-        }
+    def is_playlist(self, url):
+        """Check if the URL is a playlist based on its structure."""
+        return "playlist" in url or "&list=" in url
 
-        with YoutubeDL(playlist_opts) as ydl:
+    def fetch_playlist_videos(self, playlist_url):
+        """Get all video URLs from a playlist."""
+        with YoutubeDL(self.ydl_opts) as ydl:
             playlist_info = ydl.extract_info(playlist_url, download=False)
             entries = playlist_info.get('entries', [])
-            print(f"Found {len(entries)} videos in playlist.")
-
-            for video in entries:
-                video_url = video.get('url')
-                self.fetch_video_transcripts_or_captions(video_url)
+            # Manually construct URLs if 'url' field is None
+            return [f"https://www.youtube.com/watch?v={entry.get('id')}" for entry in entries if entry.get('id')]
 
     def download_transcripts(self, url):
         """Determine if the URL is a playlist or video and fetch transcripts."""
-        with YoutubeDL(self.ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            if 'entries' in info:  # Playlist detected
-                self.fetch_playlist_transcripts(url)
-            else:  # Single video detected
-                self.fetch_video_transcripts_or_captions(url)
+        if self.is_playlist(url):
+            video_urls = self.fetch_playlist_videos(url)
+            print(f"Found {len(video_urls)} videos in playlist.")
 
-# Example usage:
-# Initialize the downloader with a language parameter
-downloader = YouTubeTranscriptDownloader(
-    output_dir='A:/Gravações/transcript',
-    ffmpeg_path="E:/PycharmProjects/transcriptor/transcriptor/ffmpeg/bin/ffmpeg.exe",
-    language="pt"  # For a list use this link https://github.com/yt-dlp/yt-dlp/issues/2205
-)
-# Pass a single video URL or playlist URL
-url = "https://www.youtube.com/watch?v=Pny70rNPJLk"
-downloader.download_transcripts(url)
+            for video_url in tqdm(video_urls, desc="Downloading transcripts", unit="video"):
+                self.fetch_video_transcripts_or_captions(video_url)
+        else:
+            self.fetch_video_transcripts_or_captions(url)
+
+
