@@ -1,2 +1,4 @@
 /ffmpeg/
-/ffmpeg.exe
+/transcriptor/app/ffmpeg.exe
+*.exe
+*.ows
