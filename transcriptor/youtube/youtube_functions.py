@@ -8,7 +8,7 @@ import os
 
 
 class YouTubeTranscriptDownloader:
-    def __init__(self, output_dir='transcripts', ffmpeg_path=None, language='pt-BR', log_file='transcripts.log'):
+    def __init__(self, output_dir='transcripts', ffmpeg_path=None, language='pt', log_file='transcripts.log'):
         # Directory to save transcript files
         self.output_dir = output_dir
         self.ffmpeg_path = ffmpeg_path

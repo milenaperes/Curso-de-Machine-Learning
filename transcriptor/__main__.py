@@ -1,7 +1,7 @@
 from transcriptor.args_parser import args_parser
 from transcriptor.app.app_transcricao import AudioTranscriptorApp
 from transcriptor.processamento_lotes.transcricao_lote import execute_transcription_folder
-from transcriptor.youtube.execute_yt import execute_transcript_youtube
+from transcriptor.youtube.execute_yt import execute_transcript_youtube, execute_yt_app
 
 import tkinter as tk
 import logging
@@ -20,6 +20,8 @@ if __name__ == "__main__":
     execute_transcription_folder(args)
   elif args.mode == 'youtube':
     execute_transcript_youtube(args)
+  elif args.mode == 'youtube_app':
+     execute_yt_app(args)
 
 
 

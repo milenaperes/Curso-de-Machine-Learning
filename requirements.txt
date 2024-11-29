@@ -5,3 +5,5 @@ torch==2.3.1+cu121
 argparse
 docx
 yt_dlp
+youtube-transcript-api
+python-docx

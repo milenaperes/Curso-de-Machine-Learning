@@ -15,7 +15,10 @@ def execute_transcript_youtube(args):
     downloader = YouTubeTranscriptDownloader(
         output_dir=path_processed,
         ffmpeg_path=os.path.normpath(args.ffmpeg_path),
-        language="pt"  # For a list use this link https://github.com/yt-dlp/yt-dlp/issues/2205
+        language= args.language  # For a list use this link https://github.com/yt-dlp/yt-dlp/issues/2205
     )
     # Pass a single video URL or playlist URL
     downloader.download_transcripts(url)
+
+def execute_yt_app(args):
+    return 1+2
